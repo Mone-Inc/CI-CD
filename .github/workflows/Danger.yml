@@ -15,9 +15,10 @@ jobs:
         with:
           repository: Mone-Inc/CI-CD  # Replace with the source repo name
           ref: main  # Specify the branch as 'main'
-          path: danger
+          path: source-repo
 
       - name: Danger
         uses: 417-72KI/danger-swiftlint@v5.10 # Look at the `Note for version`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DANGER_FILE: source-repo/Dangerfile
