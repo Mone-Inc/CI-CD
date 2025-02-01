@@ -14,8 +14,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Mone-Inc/CI-CD  # Replace with the source repo name
-          token: 'dsdsd' # Use GitHub token for authentication
           ref: main  # Specify the branch as 'main'
+          token: ${{ secrets.PAT_TOKEN }}
           path: source-repo
 
       - name: Danger
