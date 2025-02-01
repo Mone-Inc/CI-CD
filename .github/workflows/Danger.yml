@@ -15,7 +15,6 @@ jobs:
         with:
           repository: Mone-Inc/CI-CD  # Replace with the source repo name
           ref: main  # Specify the branch as 'main'
-          token: ${{ secrets.PAT_TOKEN }}
           path: source-repo
 
       - name: Danger
