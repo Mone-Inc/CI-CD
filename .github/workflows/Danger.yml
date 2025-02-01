@@ -15,7 +15,7 @@ jobs:
         with:
           repository: Mone-Inc/CI-CD  # Replace with the source repo name
           ref: main  # Specify the branch as 'main'
-          path: source-repo
+          path: danger
 
       - name: Danger
         uses: 417-72KI/danger-swiftlint@v5.10 # Look at the `Note for version`
