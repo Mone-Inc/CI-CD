@@ -8,7 +8,7 @@ jobs:
       - name: Checkout to target repository
         uses: actions/checkout@v3
         with:
-          token:  ${{ secrets.WORKFLOW_TOKEN }}
+          token: ${{ secrets.WORKFLOW_TOKEN }}
         
       - name: Checkout source repository from main branch
         uses: actions/checkout@v3
