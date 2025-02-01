@@ -13,7 +13,7 @@ jobs:
         with:
           repository: Mone-Inc/CI-CD  # Replace with the source repo name
           ref: main  # Specify the branch as 'main'
-          token: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication
+          token: ${{ secrets.MY_PAT_TOKEN }} # Use GitHub token for authentication
           path: source-repo
 
       - name: Danger
