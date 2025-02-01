@@ -17,6 +17,9 @@ jobs:
           ref: main  # Specify the branch as 'main'
           path: source-repo
 
+      - name: List files in source repository
+        run: ls -la source-repo
+
       - name: Danger
         uses: 417-72KI/danger-swiftlint@v5.10 # Look at the `Note for version`
         env:
