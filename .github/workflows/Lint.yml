@@ -1,0 +1,77 @@
+name: Lint
+
+on:
+    pull_request:
+        branches:
+            - '**' # This will trigger on PRs to any branch
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: write # Allow posting comments on PRs
+            contents: read # Allow reading the repository contents
+            actions: read
+
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 'node' # Use the latest version of Node.js
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Get PR Base Branch
+              run: |
+                  BASE_BRANCH=${{ github.event.pull_request.base.ref }}
+                  git fetch origin $BASE_BRANCH
+
+            - name: Get list of PR modified files
+              id: modified_files
+              run: |
+                  MODIFIED_FILES=$(git diff --name-only --diff-filter=d origin/$BASE_BRANCH...HEAD | grep -E '\.js$' | grep -v 'package-lock.json' || echo '')
+                  echo "MODIFIED_FILES=$MODIFIED_FILES" >> $GITHUB_ENV
+
+            - name: Run ESLint
+              run: |
+                  if [ -n "${{ env.MODIFIED_FILES }}" ]; then
+                    npx eslint --config eslint.config.js ${{ env.MODIFIED_FILES }} -f json > eslint-report.json
+                  else
+                    echo "No TypeScript files were modified."
+                  fi
+              continue-on-error: true # Continue even if ESLint finds errors
+
+            - name: Run Prettier
+              run: |
+                  if [ -n "${{ env.MODIFIED_FILES }}" ]; then
+                    npx prettier --check ${{ env.MODIFIED_FILES }} || echo 'Prettier found issues.'
+                  else
+                    echo "No TypeScript files were modified."
+                  fi
+              continue-on-error: true
+
+            - name: Run Reviewdog for Prettier
+              uses: EPMatt/reviewdog-action-prettier@v1
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  reporter: github-pr-review # Post as a PR review comment
+                  level: warning # Set to error, warning, or info
+                  fail_on_error: false
+              env:
+                  PRETTIER_FILES: ${{ env.MODIFIED_FILES }}
+
+            - name: Run Reviewdog
+              uses: reviewdog/action-eslint@v1.33.0
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  reporter: github-pr-review # Post as a PR review comment
+                  level: warning # Set to error, warning, or info
+                  fail_on_error: false
+              env:
+                  ESLINT_REPORT: eslint-report.json # Specify the ESLint report file
