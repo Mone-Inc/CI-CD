@@ -23,6 +23,6 @@ jobs:
       - name: Danger
         uses: 417-72KI/danger-swiftlint@v5.10 # Look at the `Note for version`
         with:
-          dangerfile: source-repo/Dangerfile
+          dangerfile: source-repo/Dangerfile.swift
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
