@@ -5,7 +5,14 @@ jobs:
   Danger:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout to targer repository
+        uses: actions/checkout@v3
+      - name: Checkout source repository from main branch
+        uses: actions/checkout@v3
+        with:
+          repository: Mone-Inc/CI-CD  # Replace with the source repo name
+          ref: main  # Specify the branch as 'main'
+          token: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication
       - name: Danger
         uses: 417-72KI/danger-swiftlint@v5.10 # Look at the `Note for version`
         env:
