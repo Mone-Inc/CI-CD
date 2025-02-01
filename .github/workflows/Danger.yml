@@ -6,12 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout to target repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Checkout source repository from main branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Mone-Inc/CI-CD  # Replace with the source repo name
           ref: main  # Specify the branch as 'main'
