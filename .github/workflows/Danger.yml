@@ -1,4 +1,4 @@
-name: Danger
+name: Danger Flow
 on:
   workflow_call:
 jobs:
