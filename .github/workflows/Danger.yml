@@ -5,7 +5,7 @@ jobs:
   Danger:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout to targer repository
+      - name: Checkout to target repository
         uses: actions/checkout@v3
       - name: Checkout source repository from main branch
         uses: actions/checkout@v3
