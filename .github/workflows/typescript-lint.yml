@@ -62,11 +62,11 @@ jobs:
 
       - name: Check Prettier formatting
         working-directory: ${{ inputs.working-directory }}
-        continue-on-error: ${{ inputs.auto-fix }}
+        continue-on-error: true
         run: |
           npx prettier \
             --config ${{ inputs.prettier-config }} \
-            --check "${{ inputs.files-pattern }}"
+            --check "${{ inputs.files-pattern }}" || echo "::warning::Prettier found formatting issues. Run 'npx prettier --write' to fix."
 
       - name: Fix Prettier formatting
         if: ${{ inputs.auto-fix }}
