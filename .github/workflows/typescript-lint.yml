@@ -1,0 +1,108 @@
+name: TypeScript Lint
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: 'Working directory where the project is located'
+        required: false
+        type: string
+        default: '.'
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+      auto-fix:
+        description: 'Automatically fix ESLint and Prettier issues'
+        required: false
+        type: boolean
+        default: false
+      fail-on-warnings:
+        description: 'Fail the workflow if there are warnings'
+        required: false
+        type: boolean
+        default: false
+      eslint-config:
+        description: 'Path to ESLint config file (relative to working-directory)'
+        required: false
+        type: string
+        default: 'eslint.config.js'
+      prettier-config:
+        description: 'Path to Prettier config file (relative to working-directory)'
+        required: false
+        type: string
+        default: '.prettierrc'
+      files-pattern:
+        description: 'File patterns to lint (e.g., "src/**/*.ts")'
+        required: false
+        type: string
+        default: 'src/**/*.ts'
+
+jobs:
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
+      - name: Check Prettier formatting
+        working-directory: ${{ inputs.working-directory }}
+        continue-on-error: ${{ inputs.auto-fix }}
+        run: |
+          npx prettier \
+            --config ${{ inputs.prettier-config }} \
+            --check "${{ inputs.files-pattern }}"
+
+      - name: Fix Prettier formatting
+        if: ${{ inputs.auto-fix }}
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          npx prettier \
+            --config ${{ inputs.prettier-config }} \
+            --write "${{ inputs.files-pattern }}"
+
+      - name: Run ESLint
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          ESLINT_USE_FLAT_CONFIG: true
+        run: |
+          if [ "${{ inputs.auto-fix }}" = "true" ]; then
+            npx eslint --config ${{ inputs.eslint-config }} "${{ inputs.files-pattern }}" --fix
+          else
+            if [ "${{ inputs.fail-on-warnings }}" = "true" ]; then
+              npx eslint --config ${{ inputs.eslint-config }} "${{ inputs.files-pattern }}" --max-warnings 0
+            else
+              npx eslint --config ${{ inputs.eslint-config }} "${{ inputs.files-pattern }}"
+            fi
+          fi
+
+      - name: Commit fixes
+        if: ${{ inputs.auto-fix && github.event_name == 'pull_request' }}
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: auto-fix linting and formatting issues"
+            git push
+          fi

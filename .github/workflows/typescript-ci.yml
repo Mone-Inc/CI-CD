@@ -1,0 +1,169 @@
+name: TypeScript CI
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: 'Working directory where the project is located'
+        required: false
+        type: string
+        default: '.'
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+      run-tests:
+        description: 'Run tests'
+        required: false
+        type: boolean
+        default: false
+      test-command:
+        description: 'Test command to run'
+        required: false
+        type: string
+        default: 'npm test'
+      run-build:
+        description: 'Run build'
+        required: false
+        type: boolean
+        default: true
+      build-command:
+        description: 'Build command to run'
+        required: false
+        type: string
+        default: 'npm run build'
+      fail-on-warnings:
+        description: 'Fail the workflow if there are lint warnings'
+        required: false
+        type: boolean
+        default: false
+      eslint-config:
+        description: 'Path to ESLint config file'
+        required: false
+        type: string
+        default: 'eslint.config.js'
+      prettier-config:
+        description: 'Path to Prettier config file'
+        required: false
+        type: string
+        default: '.prettierrc'
+      files-pattern:
+        description: 'File patterns to lint'
+        required: false
+        type: string
+        default: 'src/**/*.ts'
+
+jobs:
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
+      - name: Check Prettier formatting
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          npx prettier \
+            --config ${{ inputs.prettier-config }} \
+            --check "${{ inputs.files-pattern }}"
+
+      - name: Run ESLint
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          ESLINT_USE_FLAT_CONFIG: true
+        run: |
+          if [ "${{ inputs.fail-on-warnings }}" = "true" ]; then
+            npx eslint --config ${{ inputs.eslint-config }} "${{ inputs.files-pattern }}" --max-warnings 0
+          else
+            npx eslint --config ${{ inputs.eslint-config }} "${{ inputs.files-pattern }}"
+          fi
+
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
+      - name: Type check
+        working-directory: ${{ inputs.working-directory }}
+        run: npx tsc --noEmit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    if: ${{ inputs.run-build }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
+      - name: Build project
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.build-command }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: ${{ inputs.working-directory }}/dist
+          if-no-files-found: ignore
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    if: ${{ inputs.run-tests }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.test-command }}
